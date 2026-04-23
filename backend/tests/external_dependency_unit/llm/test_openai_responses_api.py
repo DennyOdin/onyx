@@ -18,7 +18,6 @@ import pytest
 
 from onyx.llm.constants import LlmProviderNames
 from onyx.llm.litellm_singleton import litellm
-from onyx.llm.litellm_singleton.litellm.exceptions import AuthenticationError
 from onyx.llm.models import ChatCompletionMessage
 from onyx.llm.models import UserMessage
 from onyx.llm.multi_llm import LitellmLLM
@@ -152,7 +151,7 @@ def test_responses_call_with_invalid_key_raises_authentication_error() -> None:
         "NoneType" not in err_str
     ), f"metadata=None TypeError leaked into the surfaced exception: {err_str!r}"
     assert (
-        isinstance(err, AuthenticationError)
+        isinstance(err, litellm.exceptions.AuthenticationError)
         or "auth" in err_str.lower()
         or "401" in err_str
     ), (
