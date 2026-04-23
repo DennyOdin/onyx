@@ -14,11 +14,11 @@ behavior of that bridge that cannot be reached with mocks:
 
 import json
 
-import litellm
 import pytest
-from litellm.exceptions import AuthenticationError
 
 from onyx.llm.constants import LlmProviderNames
+from onyx.llm.litellm_singleton import litellm
+from onyx.llm.litellm_singleton.litellm.exceptions import AuthenticationError
 from onyx.llm.models import ChatCompletionMessage
 from onyx.llm.models import UserMessage
 from onyx.llm.multi_llm import LitellmLLM
@@ -102,13 +102,6 @@ def test_streaming_parallel_tool_calls_land_in_distinct_slots(
                     slot["name"] = tc.function.name
                 if tc.function.arguments:
                     slot["arguments"] += tc.function.arguments
-
-    if len(accumulated) < 2:
-        pytest.skip(
-            f"Model did not produce parallel tool calls this run "
-            f"(got {len(accumulated)} call(s)). Re-run or adjust prompt. "
-            f"Accumulated: {accumulated}"
-        )
 
     indices = sorted(accumulated.keys())
     assert indices == list(
@@ -201,8 +194,6 @@ def test_streaming_reasoning_summary_sections_are_separated_by_blank_line(
     text. `_patch_responses_reasoning_summary_newlines` (in
     `monkey_patches.py`) inserts the blank line. This test guards that the
     patch is still firing for current LiteLLM and OpenAI behavior.
-
-    Skips when the model produces only a single section this run.
     """
     llm = _build_openai_llm("o4-mini", test_secrets[TestSecret.OPENAI_API_KEY])
 
@@ -228,14 +219,6 @@ def test_streaming_reasoning_summary_sections_are_separated_by_blank_line(
             reasoning_parts.append(rc)
 
     full_reasoning = "".join(reasoning_parts)
-    if not full_reasoning:
-        pytest.skip("Model returned no reasoning_content this run.")
-
-    if "\n\n" not in full_reasoning:
-        pytest.skip(
-            "Model produced only a single reasoning summary section this "
-            f"run; cannot verify newline separator. Got: {full_reasoning!r}"
-        )
 
     assert (
         "\n\n" in full_reasoning

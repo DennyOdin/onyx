@@ -73,12 +73,6 @@ def test_streaming_separates_reasoning_content_from_visible_content(
     full_reasoning = "".join(reasoning_parts)
     full_content = "".join(content_parts)
 
-    if not full_reasoning:
-        pytest.skip(
-            "Model returned no reasoning tokens this run; cannot verify "
-            "reasoning/content separation."
-        )
-
     assert full_content.strip(), (
         f"Model produced reasoning but no visible answer tokens. "
         f"reasoning={full_reasoning!r}"
