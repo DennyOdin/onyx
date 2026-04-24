@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Button } from "@opal/components";
 import { SvgSettings } from "@opal/icons";
 import { toast } from "@/hooks/useToast";
@@ -10,6 +10,9 @@ import type {
   BulkCCPairStatusAction,
   IndexingStatusRequest,
 } from "@/lib/types";
+import Popover from "@/refresh-components/Popover";
+import LineItem from "@/refresh-components/buttons/LineItem";
+import { Section } from "@/layouts/general-layouts";
 import {
   buildBulkManageConfirmationMessage,
   buildBulkStatusConfirmationMessage,
@@ -35,21 +38,6 @@ export function BulkCCPairManageMenu({
 }: BulkCCPairManageMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
-  const menuRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    function handleOutsideClick(event: MouseEvent) {
-      if (!menuRef.current) return;
-      if (!menuRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handleOutsideClick);
-    return () => {
-      document.removeEventListener("mousedown", handleOutsideClick);
-    };
-  }, []);
 
   const isDisabled = !enabled || isRunning;
 
@@ -131,50 +119,42 @@ export function BulkCCPairManageMenu({
   };
 
   return (
-    <div ref={menuRef} className="relative">
-      <div className={isDisabled ? "pointer-events-none opacity-50" : ""}>
-        <Button
-          icon={SvgSettings}
-          onClick={() => {
-            if (isDisabled) return;
-            setIsOpen((prev) => !prev);
-          }}
-        >
-          Bulk Manage
-        </Button>
-      </div>
+    <div className={isDisabled ? "pointer-events-none opacity-50" : ""}>
+      <Popover
+        open={isOpen}
+        onOpenChange={(open) => {
+          setIsOpen(isDisabled ? false : open);
+        }}
+      >
+        <Popover.Trigger asChild>
+          <Button icon={SvgSettings}>Bulk Manage</Button>
+        </Popover.Trigger>
 
-      {isOpen && !isDisabled && (
-        <div className="absolute right-0 z-20 mt-2 w-48 rounded-md border border-border bg-background shadow-lg">
-          <button
-            className="block w-full px-4 py-2 text-left text-sm hover:bg-accent-background"
-            onClick={() => void runBulkAction("pause")}
+        <Popover.Content align="end">
+          <Section
+            gap={0.5}
+            height="auto"
+            alignItems="stretch"
+            justifyContent="start"
           >
-            Pause
-          </button>
+            <LineItem onClick={() => void runBulkAction("pause")}>
+              Pause
+            </LineItem>
 
-          <button
-            className="block w-full px-4 py-2 text-left text-sm hover:bg-accent-background"
-            onClick={() => void runBulkAction("resume")}
-          >
-            Resume
-          </button>
+            <LineItem onClick={() => void runBulkAction("resume")}>
+              Resume
+            </LineItem>
 
-          <button
-            className="block w-full px-4 py-2 text-left text-sm hover:bg-accent-background"
-            onClick={() => void runBulkAction("reindex")}
-          >
-            Re-Index
-          </button>
+            <LineItem onClick={() => void runBulkAction("reindex")}>
+              Re-Index
+            </LineItem>
 
-          <button
-            className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-accent-background dark:text-red-400"
-            onClick={() => void runBulkAction("delete")}
-          >
-            Delete
-          </button>
-        </div>
-      )}
+            <LineItem danger onClick={() => void runBulkAction("delete")}>
+              Delete
+            </LineItem>
+          </Section>
+        </Popover.Content>
+      </Popover>
     </div>
   );
 }
