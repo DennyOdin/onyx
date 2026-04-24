@@ -1754,18 +1754,6 @@ def bulk_manage_connectors(
             )
             skipped_reasons["update_failed"] += 1
 
-        except HTTPException:
-            db_session.rollback()
-            skipped_reasons["update_failed"] += 1
-        except Exception:
-            db_session.rollback()
-            logger.exception(
-                "Bulk %s failed for cc_pair_id=%s",
-                request.action,
-                cc_pair_id,
-            )
-            skipped_reasons["update_failed"] += 1
-
     if updated_count > 0:
         db_session.commit()
         tenant_id = get_current_tenant_id()

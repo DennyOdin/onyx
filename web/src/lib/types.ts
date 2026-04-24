@@ -615,4 +615,35 @@ export interface IndexingStatusRequest {
   source_to_page?: Record<ValidSources, number>;
   source?: ValidSources;
   get_all_connectors?: boolean;
+  name_filter?: string;
+}
+
+export type BulkCCPairStatusAction = "pause" | "resume";
+export type BulkCCPairManageAction = "reindex" | "delete";
+export type BulkCCPairAction = BulkCCPairStatusAction | BulkCCPairManageAction;
+
+export interface BulkCCPairStatusRequest {
+  action: BulkCCPairStatusAction;
+  filters: IndexingStatusRequest;
+}
+
+export interface BulkCCPairManageRequest {
+  action: BulkCCPairManageAction;
+  filters: IndexingStatusRequest;
+}
+
+interface BulkCCPairActionResponseBase {
+  matched_count: number;
+  eligible_count: number;
+  updated_count: number;
+  skipped_count: number;
+  skipped_reasons: Record<string, number>;
+}
+
+export interface BulkCCPairStatusResponse extends BulkCCPairActionResponseBase {
+  action: BulkCCPairStatusAction;
+}
+
+export interface BulkCCPairManageResponse extends BulkCCPairActionResponseBase {
+  action: BulkCCPairManageAction;
 }

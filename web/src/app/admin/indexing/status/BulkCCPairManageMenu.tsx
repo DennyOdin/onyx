@@ -4,7 +4,17 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@opal/components";
 import { SvgSettings } from "@opal/icons";
 import { toast } from "@/hooks/useToast";
-import { IndexingStatusRequest } from "@/lib/types";
+import { bulkManageCCPairs, bulkUpdateCCPairStatus } from "@/lib/connector";
+import type {
+  BulkCCPairAction,
+  BulkCCPairStatusAction,
+  IndexingStatusRequest,
+} from "@/lib/types";
+import {
+  buildBulkManageConfirmationMessage,
+  buildBulkStatusConfirmationMessage,
+  formatSkippedReasons,
+} from "./bulkUtils";
 
 interface BulkCCPairManageMenuProps {
   filters: IndexingStatusRequest;
@@ -12,103 +22,10 @@ interface BulkCCPairManageMenuProps {
   onSuccess: () => void;
 }
 
-type BulkAction = "pause" | "resume" | "reindex" | "delete";
-type BulkStatusAction = "pause" | "resume";
-type BulkManageAction = "reindex" | "delete";
-
-interface BulkCCPairStatusResponse {
-  action: BulkStatusAction;
-  matched_count: number;
-  eligible_count: number;
-  updated_count: number;
-  skipped_count: number;
-  skipped_reasons: Record<string, number>;
-}
-
-interface BulkCCPairManageResponse {
-  action: BulkManageAction;
-  matched_count: number;
-  eligible_count: number;
-  updated_count: number;
-  skipped_count: number;
-  skipped_reasons: Record<string, number>;
-}
-
-async function bulkUpdateCCPairStatus(
-  action: BulkStatusAction,
-  filters: IndexingStatusRequest
-): Promise<BulkCCPairStatusResponse> {
-  const response = await fetch("/api/manage/admin/connector/bulk/status", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      action,
-      filters,
-    }),
-  });
-
-  if (!response.ok) {
-    const errorBody = await response.json().catch(() => null);
-    throw new Error(
-      errorBody?.detail ||
-        `Failed to bulk ${action} connectors matching the current filters`
-    );
-  }
-
-  return response.json();
-}
-
-async function bulkManageCCPairs(
-  action: BulkManageAction,
-  filters: IndexingStatusRequest
-): Promise<BulkCCPairManageResponse> {
-  const response = await fetch("/api/manage/admin/connector/bulk/manage", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      action,
-      filters,
-    }),
-  });
-
-  if (!response.ok) {
-    const errorBody = await response.json().catch(() => null);
-    throw new Error(
-      errorBody?.detail ||
-        `Failed to bulk ${action} connectors matching the current filters`
-    );
-  }
-
-  return response.json();
-}
-
-function formatSkippedReasons(skippedReasons: Record<string, number>): string {
-  const labels: Record<string, string> = {
-    forbidden: "not editable",
-    already_in_target_state: "already in target state",
-    missing_cc_pair_status: "missing status",
-    indexing_in_progress: "already indexing",
-    not_eligible_for_action: "not eligible",
-    missing_cc_pair: "missing connector pair",
-    update_failed: "update failed",
-  };
-
-  return Object.entries(skippedReasons)
-    .filter(([, count]) => count > 0)
-    .map(([key, count]) => `${count} ${labels[key] ?? key}`)
-    .join(", ");
-}
-
-function buildBulkStatusConfirmationMessage(action: BulkStatusAction) {
-  return `Are you sure you want to bulk ${action} all editable connectors matching the current search and filters?`;
-}
-
-function buildBulkManageConfirmationMessage(action: BulkManageAction) {
-  return `Are you sure you want to bulk ${action} all editable connectors matching the current search and filters?`;
+function isStatusAction(
+  action: BulkCCPairAction
+): action is BulkCCPairStatusAction {
+  return action === "pause" || action === "resume";
 }
 
 export function BulkCCPairManageMenu({
@@ -136,12 +53,12 @@ export function BulkCCPairManageMenu({
 
   const isDisabled = !enabled || isRunning;
 
-  const runBulkAction = async (action: BulkAction) => {
+  const runBulkAction = async (action: BulkCCPairAction) => {
     try {
       setIsOpen(false);
       setIsRunning(true);
 
-      if (action === "pause" || action === "resume") {
+      if (isStatusAction(action)) {
         const confirmed = window.confirm(
           buildBulkStatusConfirmationMessage(action)
         );

@@ -1,3 +1,12 @@
+import type {
+  BulkCCPairManageAction,
+  BulkCCPairManageRequest,
+  BulkCCPairManageResponse,
+  BulkCCPairStatusAction,
+  BulkCCPairStatusRequest,
+  BulkCCPairStatusResponse,
+  IndexingStatusRequest,
+} from "./types";
 import { ValidSources } from "./types";
 import {
   Connector,
@@ -12,6 +21,78 @@ async function handleResponse(
     return [null, responseJson];
   }
   return [responseJson.detail, null];
+}
+
+async function getBulkErrorMessage(
+  response: Response,
+  fallbackMessage: string
+): Promise<string> {
+  const errorBody = await response.json().catch(() => null);
+  const detail = errorBody?.detail;
+
+  if (typeof detail === "string") {
+    return detail;
+  }
+
+  return fallbackMessage;
+}
+
+export async function bulkUpdateCCPairStatus(
+  action: BulkCCPairStatusAction,
+  filters: IndexingStatusRequest
+): Promise<BulkCCPairStatusResponse> {
+  const request: BulkCCPairStatusRequest = {
+    action,
+    filters,
+  };
+
+  const response = await fetch("/api/manage/admin/connector/bulk/status", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      await getBulkErrorMessage(
+        response,
+        `Failed to bulk ${action} connectors matching the current filters`
+      )
+    );
+  }
+
+  return response.json();
+}
+
+export async function bulkManageCCPairs(
+  action: BulkCCPairManageAction,
+  filters: IndexingStatusRequest
+): Promise<BulkCCPairManageResponse> {
+  const request: BulkCCPairManageRequest = {
+    action,
+    filters,
+  };
+
+  const response = await fetch("/api/manage/admin/connector/bulk/manage", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      await getBulkErrorMessage(
+        response,
+        `Failed to bulk ${action} connectors matching the current filters`
+      )
+    );
+  }
+
+  return response.json();
 }
 
 export async function fetchConnectors(
