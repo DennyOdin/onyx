@@ -77,14 +77,12 @@ export function BulkCCPairManageMenu({
         return;
       }
 
-      if (action === "delete") {
-        const confirmed = window.confirm(
-          buildBulkManageConfirmationMessage(action)
-        );
+      const confirmed = window.confirm(
+        buildBulkManageConfirmationMessage(action)
+      );
 
-        if (!confirmed) {
-          return;
-        }
+      if (!confirmed) {
+        return;
       }
 
       const result = await bulkManageCCPairs(action, filters);

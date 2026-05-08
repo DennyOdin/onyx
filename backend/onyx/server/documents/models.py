@@ -646,3 +646,22 @@ class BulkCCPairStatusResponse(BaseModel):
     updated_count: int
     skipped_count: int
     skipped_reasons: dict[str, int] = Field(default_factory=dict)
+
+
+class BulkCCPairManageAction(str, Enum):
+    REINDEX = "reindex"
+    DELETE = "delete"
+
+
+class BulkCCPairManageRequest(BaseModel):
+    action: BulkCCPairManageAction
+    filters: IndexingStatusRequest
+
+
+class BulkCCPairManageResponse(BaseModel):
+    action: BulkCCPairManageAction
+    matched_count: int
+    eligible_count: int
+    updated_count: int
+    skipped_count: int
+    skipped_reasons: dict[str, int]

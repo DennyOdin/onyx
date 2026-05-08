@@ -7,8 +7,6 @@ from io import BytesIO
 from typing import Any
 from typing import cast
 
-from enum import Enum
-
 from fastapi import APIRouter
 from fastapi import Depends
 from fastapi import File
@@ -162,8 +160,10 @@ from onyx.utils.threadpool_concurrency import run_functions_tuples_in_parallel
 from onyx.utils.variable_functionality import fetch_ee_implementation_or_noop
 from shared_configs.contextvars import get_current_tenant_id
 
-
 from onyx.server.documents.cc_pair import update_cc_pair_status
+from onyx.server.documents.models import BulkCCPairManageAction
+from onyx.server.documents.models import BulkCCPairManageRequest
+from onyx.server.documents.models import BulkCCPairManageResponse
 from onyx.server.documents.models import BulkCCPairStatusAction
 from onyx.server.documents.models import BulkCCPairStatusRequest
 from onyx.server.documents.models import BulkCCPairStatusResponse
@@ -1606,8 +1606,7 @@ def bulk_update_connector_status(
     matched_count = len(editable_statuses) + len(non_editable_statuses)
     eligible_count = len(eligible_statuses)
     skipped_count = sum(skipped_reasons.values())
-
-    return BulkCCPairStatusResponse(
+    return BulkCCPairManageResponse(
         action=request.action,
         matched_count=matched_count,
         eligible_count=eligible_count,
@@ -1632,25 +1631,6 @@ def _get_bulk_target_cc_pair_statuses(
     )
 
     return _flatten_cc_pair_statuses_from_indexing_status_response(response_list)
-
-
-class BulkCCPairManageAction(str, Enum):
-    REINDEX = "reindex"
-    DELETE = "delete"
-
-
-class BulkCCPairManageRequest(BaseModel):
-    action: BulkCCPairManageAction
-    filters: IndexingStatusRequest
-
-
-class BulkCCPairManageResponse(BaseModel):
-    action: BulkCCPairManageAction
-    matched_count: int
-    eligible_count: int
-    updated_count: int
-    skipped_count: int
-    skipped_reasons: dict[str, int]
 
 
 def _status_is_not_currently_active(
@@ -1740,6 +1720,7 @@ def bulk_manage_connectors(
                     status=ConnectorCredentialPairStatus.DELETING,
                 )
 
+            db_session.commit()
             updated_count += 1
 
         except HTTPException:
@@ -1755,7 +1736,6 @@ def bulk_manage_connectors(
             skipped_reasons["update_failed"] += 1
 
     if updated_count > 0:
-        db_session.commit()
         tenant_id = get_current_tenant_id()
 
         if request.action == BulkCCPairManageAction.REINDEX:
@@ -1770,8 +1750,6 @@ def bulk_manage_connectors(
                 priority=OnyxCeleryPriority.HIGH,
                 kwargs={"tenant_id": tenant_id},
             )
-
-    matched_count = len(editable_statuses) + len(non_editable_statuses)
     eligible_count = len(eligible_cc_pair_ids)
     skipped_count = sum(skipped_reasons.values())
 
