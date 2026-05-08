@@ -41,12 +41,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DropdownMenuItemWithTooltip } from "@/components/ui/dropdown-menu-with-tooltip";
-import {
-  PlayIcon,
-  PauseIcon,
-  Trash2Icon,
-  RefreshCwIcon,
-} from "lucide-react";
+import { PlayIcon, PauseIcon, Trash2Icon, RefreshCwIcon } from "lucide-react";
 import ReIndexModal from "../../connector/[ccPairId]/ReIndexModal";
 import {
   buildCCPairInfoUrl,
@@ -182,8 +177,10 @@ function ConnectorRow({
   const [isReIndexModalOpen, setIsReIndexModalOpen] = useState(false);
   const [showDeleteConnectorConfirmModal, setShowDeleteConnectorConfirmModal] =
     useState(false);
-  const [showInvalidConnectorConfirmModal, setShowInvalidConnectorConfirmModal] =
-    useState(false);
+  const [
+    showInvalidConnectorConfirmModal,
+    setShowInvalidConnectorConfirmModal,
+  ] = useState(false);
 
   const connectorUrl = `/admin/connector/${ccPairsIndexingStatus.cc_pair_id}`;
 
@@ -293,7 +290,9 @@ function ConnectorRow({
       }
     } catch (error) {
       console.error("Failed to trigger indexing:", error);
-      toast.error("An unexpected error occurred while trying to start indexing");
+      toast.error(
+        "An unexpected error occurred while trying to start indexing"
+      );
     }
   };
 
@@ -388,7 +387,10 @@ function ConnectorRow({
         {isPaidEnterpriseFeaturesEnabled && (
           <TableCell>
             {ccPairsIndexingStatus.access_type === "public" ? (
-              <Badge variant={isEditable ? "success" : "default"} icon={FiUnlock}>
+              <Badge
+                variant={isEditable ? "success" : "default"}
+                icon={FiUnlock}
+              >
                 Organization Public
               </Badge>
             ) : ccPairsIndexingStatus.access_type === "sync" ? (
@@ -396,7 +398,8 @@ function ConnectorRow({
                 variant={isEditable ? "auto-sync" : "default"}
                 icon={FiRefreshCw}
               >
-                Inherited from {getSourceDisplayName(ccPairsIndexingStatus.source)}
+                Inherited from{" "}
+                {getSourceDisplayName(ccPairsIndexingStatus.source)}
               </Badge>
             ) : (
               <Badge variant={isEditable ? "private" : "default"} icon={FiLock}>
